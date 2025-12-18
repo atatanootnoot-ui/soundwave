@@ -1,0 +1,19 @@
+Songs names
+
+Adekunle Gold, Lucky Daye - Sinner
+Ayra Starr - Beggie Beggie ft. Ckay
+Davido - Kante Ft Fave (Lyrics)
+Fireboy DML - Playboy
+Joshua Baraka x Jae5 - Wrong Places
+
+Artist names to be put on the web and their image names:
+
+adekunlegold.jpg - Adekunle Gold
+ayrastar.jpg - Ayra Star
+davido.jpg - Davido
+fireboy.jpg - Fireboy
+joshuabaraka.jpg - Joshua Baraka
+
+Make sure the names are looking stylish in an afro like vibe......
+
+and make changes to the signup or login prompt, so that it prompts the user after they attempt to play a song, not before..

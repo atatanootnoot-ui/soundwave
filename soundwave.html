@@ -1,0 +1,3277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Wave - Music Streaming</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Pacifico&family=Montserrat:wght@700;800;900&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (Development) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-dark: #0a0a0f;
+            --secondary-dark: #121218;
+            --accent-blue: #0066ff;
+            --accent-violet: #9d4edd;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-dark);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-blue);
+            border-radius: 4px;
+        }
+        
+        /* Waveform progress bar */
+        .waveform-progress {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .waveform-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-blue) 0%, var(--accent-violet) 100%);
+            border-radius: 2px;
+            position: relative;
+            width: 0%;
+        }
+        
+        .waveform-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255,255,255,0.3) 50%, 
+                transparent 100%);
+            animation: wave 1s infinite linear;
+            background-size: 200% 100%;
+        }
+        
+        @keyframes wave {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Card hover effects */
+        .music-card {
+            transition: all 180ms cubic-bezier(0.2, 0.0, 0.0, 1);
+            background: var(--secondary-dark);
+        }
+        
+        .music-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 32px rgba(0, 102, 255, 0.1);
+        }
+        
+        .artist-card {
+            transition: all 180ms cubic-bezier(0.2, 0.0, 0.0, 1);
+            background: var(--secondary-dark);
+        }
+        
+        .artist-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 32px rgba(157, 78, 221, 0.1);
+        }
+        
+        /* Audio visualizer */
+        .visualizer-bar {
+            animation: visualizer 1s ease infinite alternate;
+        }
+        
+        @keyframes visualizer {
+            0% { height: 4px; }
+            100% { height: 20px; }
+        }
+        
+        .visualizer-bar:nth-child(2) { animation-delay: 0.1s; }
+        .visualizer-bar:nth-child(3) { animation-delay: 0.2s; }
+        .visualizer-bar:nth-child(4) { animation-delay: 0.3s; }
+        .visualizer-bar:nth-child(5) { animation-delay: 0.4s; }
+        
+        /* Player styling */
+        .player-controls button {
+            transition: all 120ms cubic-bezier(0.2, 0.0, 0.0, 1);
+        }
+        
+        .player-controls button:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Volume Slider Custom */
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 100px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        
+        .volume-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        
+        /* Reactive background */
+        .reactive-bg {
+            background: radial-gradient(
+                circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(157, 78, 221, 0.1) 0%,
+                rgba(0, 102, 255, 0.05) 30%,
+                transparent 70%
+            );
+        }
+        
+        /* Play button animation when playing */
+        .playing {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 102, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0); }
+        }
+        
+        /* Artist page styling */
+        .artist-header {
+            background: linear-gradient(to bottom, rgba(18, 18, 24, 0.8), var(--primary-dark));
+            padding: 2rem 1.5rem;
+            margin: -1.5rem -1.5rem 2rem -1.5rem;
+        }
+        
+        /* Song list styling */
+        .song-list-item {
+            transition: all 120ms cubic-bezier(0.2, 0.0, 0.0, 1);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .song-list-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Hide/show sections */
+        .hidden-section {
+            display: none;
+        }
+        
+        .active-section {
+            display: block;
+        }
+        
+        /* Animated Hello text */
+        .hello-text {
+            font-family: 'Pacifico', cursive;
+            font-size: 3rem;
+            background: linear-gradient(45deg, #0066ff, #9d4edd, #00ffaa, #ff6b6b);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 5s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Favorites styling */
+        .favorite-item {
+            transition: all 200ms cubic-bezier(0.2, 0.0, 0.0, 1);
+        }
+        
+        .favorite-item:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .liked {
+            color: #ef4444 !important;
+        }
+        
+        /* Auth Modal Styling */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .auth-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auth-container {
+            background: var(--secondary-dark);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 440px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+        
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .auth-tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-tab.active {
+            color: white;
+        }
+        
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-violet));
+        }
+        
+        .auth-form {
+            display: none;
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        .password-strength {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .password-strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        .password-strength.weak .password-strength-fill {
+            background: #ef4444;
+            width: 33%;
+        }
+        
+        .password-strength.medium .password-strength-fill {
+            background: #f59e0b;
+            width: 66%;
+        }
+        
+        .password-strength.strong .password-strength-fill {
+            background: #10b981;
+            width: 100%;
+        }
+        
+        .secret-code-note {
+            background: rgba(157, 78, 221, 0.1);
+            border: 1px solid rgba(157, 78, 221, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .user-menu {
+            position: relative;
+        }
+        
+        .user-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--secondary-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            min-width: 200px;
+            margin-top: 0.5rem;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .user-dropdown.active {
+            display: block;
+        }
+        
+        /* Afro Style Typography */
+        .afro-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+        
+        .afro-subtitle {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .afro-vibe {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Gradient backgrounds for artist cards */
+        .gradient-adekunle {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+        }
+        
+        .gradient-ayra {
+            background: linear-gradient(135deg, #A1C4FD 0%, #C2E9FB 100%);
+        }
+        
+        .gradient-davido {
+            background: linear-gradient(135deg, #FFECD2 0%, #FCB69F 100%);
+        }
+        
+        .gradient-fireboy {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+        }
+        
+        .gradient-joshua {
+            background: linear-gradient(135deg, #D4FC79 0%, #96E6A1 100%);
+        }
+        
+        .gradient-patoranking {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Song Options Menu Styling */
+        .song-options-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--secondary-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            min-width: 180px;
+            z-index: 50;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .song-options-menu.active {
+            display: block;
+        }
+        
+        .song-option {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .song-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .song-option i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .song-option.download {
+            color: #3b82f6;
+        }
+        
+        .song-option.info {
+            color: #10b981;
+        }
+        
+        /* Song Info Modal Styling */
+        .song-info-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .song-info-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .song-info-container {
+            background: var(--secondary-dark);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+        
+        .song-info-image {
+            width: 200px;
+            height: 200px;
+            border-radius: 12px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+        
+        .song-info-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .song-info-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .song-info-detail {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .song-info-detail label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .song-info-detail span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+    
+    <!-- Auth Modal -->
+    <div class="auth-modal" id="auth-modal">
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-form="login">Login</button>
+                <button class="auth-tab" data-form="signup">Sign Up</button>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form active">
+                <h2 class="text-2xl font-['Space_Grotesk'] font-semibold mb-6">Welcome Back</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" id="login-email" required
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="you@example.com">
+                        <div class="text-xs text-red-400 mt-1" id="login-email-error"></div>
+                    </div>
+                    
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="login-password" required
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="••••••••">
+                        <div class="text-xs text-red-400 mt-1" id="login-password-error"></div>
+                    </div>
+                    
+                    <div id="login-secret-code-section" style="display: none;">
+                        <label for="login-secret-code" class="block text-sm font-medium mb-2">
+                            <i class="fas fa-shield-alt mr-2"></i>Secret Code (Optional)
+                        </label>
+                        <input type="text" id="login-secret-code"
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="e.g., 88004">
+                        <div class="text-xs text-gray-400 mt-1">Enter if you set up a secret code</div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="remember-me" class="rounded border-gray-700 bg-gray-900">
+                            <span class="text-sm">Remember me</span>
+                        </label>
+                        <button type="button" class="text-sm text-blue-400 hover:text-blue-300" id="forgot-password">
+                            Forgot password?
+                        </button>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-all duration-200 mt-2">
+                        Sign In
+                    </button>
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-sm text-gray-400">
+                            Don't have an account? 
+                            <button type="button" class="text-blue-400 hover:text-blue-300 switch-to-signup">Sign up</button>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <div class="text-xs text-gray-500 mb-2">Demo Accounts</div>
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <button type="button" class="demo-account-btn text-xs px-3 py-1 bg-gray-800 rounded-full hover:bg-gray-700" data-email="user@demo.com" data-password="demo123">
+                            User: demo123
+                        </button>
+                        <button type="button" class="demo-account-btn text-xs px-3 py-1 bg-gray-800 rounded-full hover:bg-gray-700" data-email="admin@demo.com" data-password="admin123" data-secret="88004">
+                            Admin: 88004
+                        </button>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Signup Form -->
+            <form id="signup-form" class="auth-form">
+                <h2 class="text-2xl font-['Space_Grotesk'] font-semibold mb-6">Join Sound Wave</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="signup-display-name" class="block text-sm font-medium mb-2">Display Name (Optional)</label>
+                        <input type="text" id="signup-display-name"
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="Your display name">
+                    </div>
+                    
+                    <div>
+                        <label for="signup-email" class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" id="signup-email" required
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="you@example.com">
+                        <div class="text-xs text-red-400 mt-1" id="signup-email-error"></div>
+                    </div>
+                    
+                    <div>
+                        <label for="signup-password" class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="signup-password" required
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="••••••••">
+                        <div class="password-strength" id="password-strength">
+                            <div class="password-strength-fill"></div>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">Minimum 8 characters with uppercase, lowercase, and number</div>
+                        <div class="text-xs text-red-400 mt-1" id="signup-password-error"></div>
+                    </div>
+                    
+                    <div>
+                        <label for="signup-confirm-password" class="block text-sm font-medium mb-2">Confirm Password</label>
+                        <input type="password" id="signup-confirm-password" required
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="••••••••">
+                        <div class="text-xs text-red-400 mt-1" id="signup-confirm-error"></div>
+                    </div>
+                    
+                    <div>
+                        <label for="signup-secret-code" class="block text-sm font-medium mb-2">
+                            <i class="fas fa-shield-alt mr-2"></i>Secret Code (Optional)
+                        </label>
+                        <input type="text" id="signup-secret-code"
+                               class="w-full px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                               placeholder="e.g., 88004">
+                        <div class="secret-code-note">
+                            <p class="text-sm"><i class="fas fa-info-circle mr-2"></i>Secret codes add an extra layer of security. You'll be prompted for this code during login if set.</p>
+                        </div>
+                    </div>
+                    
+                    <label class="flex items-start space-x-2 cursor-pointer mt-4">
+                        <input type="checkbox" id="terms-agreement" class="rounded border-gray-700 bg-gray-900 mt-1" required>
+                        <span class="text-sm">I agree to the <a href="#" class="text-blue-400 hover:text-blue-300">Terms of Service</a> and <a href="#" class="text-blue-400 hover:text-blue-300">Privacy Policy</a></span>
+                    </label>
+                    
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-all duration-200 mt-2">
+                        Create Account
+                    </button>
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-sm text-gray-400">
+                            Already have an account? 
+                            <button type="button" class="text-blue-400 hover:text-blue-300 switch-to-login">Sign in</button>
+                        </p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Song Info Modal -->
+    <div class="song-info-modal" id="song-info-modal">
+        <div class="song-info-container">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-['Space_Grotesk'] font-semibold">Song Information</h2>
+                <button class="close-song-info text-gray-400 hover:text-white p-2">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="song-info-image" id="song-info-image">
+                <img src="" alt="Song Art" id="song-info-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-music text-6xl text-white flex items-center justify-center h-full\"></i>';">
+            </div>
+            
+            <div class="text-center mb-4">
+                <h3 class="text-xl font-bold" id="song-info-title">Song Title</h3>
+                <p class="text-gray-400" id="song-info-artist">Artist Name</p>
+            </div>
+            
+            <div class="song-info-details">
+                <div class="song-info-detail">
+                    <label>Duration</label>
+                    <span id="song-info-duration">0:00</span>
+                </div>
+                <div class="song-info-detail">
+                    <label>Release Year</label>
+                    <span id="song-info-year">2023</span>
+                </div>
+                <div class="song-info-detail">
+                    <label>Genre</label>
+                    <span id="song-info-genre">Afrobeats</span>
+                </div>
+                <div class="song-info-detail">
+                    <label>Bitrate</label>
+                    <span id="song-info-bitrate">320 kbps</span>
+                </div>
+                <div class="song-info-detail" style="grid-column: span 2;">
+                    <label>Album</label>
+                    <span id="song-info-album">Album Name</span>
+                </div>
+                <div class="song-info-detail" style="grid-column: span 2;">
+                    <label>Description</label>
+                    <span id="song-info-description">Song description goes here.</span>
+                </div>
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-gray-800 flex justify-end">
+                <button class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors duration-200 mr-2 close-song-info">
+                    Close
+                </button>
+                <button class="px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-200" id="song-info-play-btn">
+                    <i class="fas fa-play mr-2"></i>Play Song
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="flex flex-1 overflow-hidden reactive-bg" id="reactive-bg">
+        
+        <!-- Left Sidebar -->
+        <aside class="w-64 bg-[#121218]/90 backdrop-blur-lg border-r border-gray-800 p-6 hidden md:flex flex-col">
+            <!-- Logo -->
+            <div class="mb-10">
+                <h1 class="text-2xl font-['Space_Grotesk'] font-semibold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                    Sound Wave
+                </h1>
+                <p class="text-sm text-gray-400 mt-1">Feel the frequency</p>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="space-y-2 flex-1">
+                <a href="#" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 group" data-section="home">
+                    <i class="fas fa-home text-gray-400 group-hover:text-blue-400 w-5 text-center"></i>
+                    <span class="font-medium">Home</span>
+                </a>
+                
+                <a href="#" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 group" data-section="artists">
+                    <i class="fas fa-user text-gray-400 group-hover:text-blue-400 w-5 text-center"></i>
+                    <span class="font-medium">Artists</span>
+                </a>
+                
+                <!-- NEW: Favorites Section -->
+                <a href="#" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 group" data-section="favorites">
+                    <i class="fas fa-heart text-gray-400 group-hover:text-red-400 w-5 text-center"></i>
+                    <span class="font-medium">Favorites</span>
+                </a>
+                
+                <a href="#" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 group" data-section="waves">
+                    <i class="fas fa-music text-gray-400 group-hover:text-purple-400 w-5 text-center"></i>
+                    <span class="font-medium">Waves</span>
+                </a>
+                
+                <a href="#" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 group" data-section="moods">
+                    <i class="fas fa-smile text-gray-400 group-hover:text-purple-400 w-5 text-center"></i>
+                    <span class="font-medium">Moods</span>
+                </a>
+            </nav>
+            
+            <!-- Now Playing -->
+            <div class="mt-auto pt-6 border-t border-gray-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg overflow-hidden" id="sidebar-album-art">
+                        <img src="" alt="" class="w-full h-full object-cover" id="sidebar-album-img" onerror="this.style.display='none'; this.parentElement.className='w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center'; this.parentElement.innerHTML='<i class=\"fas fa-music text-white\"></i>';">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate" id="sidebar-song">Abule</p>
+                        <p class="text-xs text-gray-400" id="sidebar-artist">Patoranking</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="h-16 border-b border-gray-800 px-6 flex items-center justify-between">
+                <!-- Search -->
+                <div class="relative flex-1 max-w-2xl">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-500"></i>
+                    </div>
+                    <input 
+                        type="search" 
+                        class="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                        placeholder="Search artists, songs, or playlists"
+                        id="search-input"
+                    >
+                </div>
+                
+                <!-- User Controls -->
+                <div class="flex items-center space-x-4 ml-6">
+                    <button class="p-2 hover:bg-gray-800/50 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-bell text-gray-400"></i>
+                    </button>
+                    
+                    <!-- User Profile -->
+                    <div class="user-menu">
+                        <div id="user-profile" class="hidden flex items-center space-x-3 cursor-pointer">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center" id="user-avatar">
+                                <span class="text-sm font-medium" id="user-initials">U</span>
+                            </div>
+                            <span class="text-sm font-medium hidden md:inline" id="user-name">User</span>
+                            <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                        </div>
+                        
+                        <!-- Login Button (shown when not logged in) -->
+                        <button id="login-button" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-all duration-200">
+                            Sign In
+                        </button>
+                        
+                        <!-- User Dropdown Menu -->
+                        <div class="user-dropdown">
+                            <div class="p-4 border-b border-gray-800">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center" id="dropdown-avatar">
+                                        <span class="text-sm font-medium" id="dropdown-initials">U</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium" id="dropdown-name">User</p>
+                                        <p class="text-xs text-gray-400" id="dropdown-email">user@example.com</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200">
+                                    <i class="fas fa-user text-gray-400 w-5 text-center"></i>
+                                    <span class="font-medium">Profile</span>
+                                </a>
+                                <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200">
+                                    <i class="fas fa-cog text-gray-400 w-5 text-center"></i>
+                                    <span class="font-medium">Settings</span>
+                                </a>
+                                <button id="logout-button" class="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 text-left">
+                                    <i class="fas fa-sign-out-alt text-gray-400 w-5 text-center"></i>
+                                    <span class="font-medium">Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-6" id="content-area">
+                
+                <!-- Welcome Message (shown when not logged in) -->
+                <div id="welcome-message" class="text-center py-12">
+                    <h1 class="hello-text mb-4">Welcome to Sound Wave!</h1>
+                    <p class="text-xl text-gray-300 mb-8">Experience music like never before</p>
+                    <button id="get-started-button" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:opacity-90 transition-all duration-200 text-lg">
+                        Get Started - Sign Up Free
+                    </button>
+                    <p class="text-gray-400 mt-6">Already have an account? <button class="text-blue-400 hover:text-blue-300" id="welcome-login">Sign In</button></p>
+                </div>
+                
+                <!-- HOME SECTION (Default - shown when logged in) -->
+                <section id="home-section" class="hidden-section">
+                    <!-- Welcome Section -->
+                    <div class="mb-8">
+                        <h2 class="hello-text mb-2">Hello, <span id="user-greeting">User</span>!</h2>
+                        <p class="text-gray-400 mb-6">What would you like to listen to today?</p>
+                        
+                        <!-- Recent Plays -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+                            <div class="music-card rounded-lg p-4 flex items-center space-x-4 cursor-pointer" data-song="abule">
+                                <div class="w-16 h-16 rounded-lg overflow-hidden">
+                                    <img src="images/patoranking.jpg" alt="Patoranking" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.className='w-16 h-16 gradient-patoranking rounded-lg flex items-center justify-center'; this.parentElement.innerHTML='<i class=\"fas fa-music text-white\"></i>';">
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Abule</h3>
+                                    <p class="text-sm text-gray-400">Patoranking</p>
+                                </div>
+                            </div>
+                            
+                            <div class="music-card rounded-lg p-4 flex items-center space-x-4 cursor-pointer" data-song="sinner">
+                                <div class="w-16 h-16 rounded-lg overflow-hidden">
+                                    <img src="images/adekunlegold.jpg" alt="Adekunle Gold" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.className='w-16 h-16 gradient-adekunle rounded-lg flex items-center justify-center'; this.parentElement.innerHTML='<i class=\"fas fa-music text-white\"></i>';">
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Sinner</h3>
+                                    <p class="text-sm text-gray-400">Adekunle Gold, Lucky Daye</p>
+                                </div>
+                            </div>
+                            
+                            <div class="music-card rounded-lg p-4 flex items-center space-x-4 cursor-pointer" data-song="beggiebeggie">
+                                <div class="w-16 h-16 rounded-lg overflow-hidden">
+                                    <img src="images/ayrastarr.jpg" alt="Ayra Starr" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.className='w-16 h-16 gradient-ayra rounded-lg flex items-center justify-center'; this.parentElement.innerHTML='<i class=\"fas fa-music text-white\"></i>';">
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Beggie Beggie</h3>
+                                    <p class="text-sm text-gray-400">Ayra Starr ft. CKay</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Popular Artists -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl afro-title afro-vibe mb-2">AFROBEATS ARTISTS</h2>
+                            <button class="text-sm text-gray-400 hover:text-white transition-colors duration-200 view-all-artists">
+                                Show all
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                            <!-- Artist Card - PATORANKING -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="patoranking">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/patoranking.jpg" alt="Patoranking" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-blue-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="patoranking">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">PATORANKING</h3>
+                                <p class="text-sm text-gray-400 truncate">Afrobeats Legend</p>
+                                <p class="text-xs text-gray-500 mt-1">2 songs</p>
+                            </div>
+                            
+                            <!-- Artist Card - ADEKUNLE GOLD -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="adekunlegold">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-pink-500/20 to-red-500/20 rounded-lg group-hover:from-pink-500/30 group-hover:to-red-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/adekunlegold.jpg" alt="Adekunle Gold" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-pink-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="adekunlegold">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">ADEKUNLE GOLD</h3>
+                                <p class="text-sm text-gray-400 truncate">Highlife Fusion</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - AYRA STARR -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="ayrastarr">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-blue-400/20 to-cyan-500/20 rounded-lg group-hover:from-blue-400/30 group-hover:to-cyan-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/ayrastarr.jpg" alt="Ayra Starr" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-blue-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="ayrastarr">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">AYRA STARR</h3>
+                                <p class="text-sm text-gray-400 truncate">Afropop Star</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - DAVIDO -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="davido">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg group-hover:from-yellow-500/30 group-hover:to-orange-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/davido.jpg" alt="Davido" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-yellow-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="davido">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">DAVIDO</h3>
+                                <p class="text-sm text-gray-400 truncate">OBO • Afrobeats Icon</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - FIREBOY DML -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="fireboydml">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-lg group-hover:from-red-500/30 group-hover:to-pink-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/fireboydml.jpg" alt="Fireboy DML" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-red-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="fireboydml">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">FIREBOY DML</h3>
+                                <p class="text-sm text-gray-400 truncate">Afro-Life Artist</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - JOSHUA BARAKA -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="joshuabaraka">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg group-hover:from-green-500/30 group-hover:to-emerald-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/joshuabaraka.jpg" alt="Joshua Baraka" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-green-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="joshuabaraka">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">JOSHUA BARAKA</h3>
+                                <p class="text-sm text-gray-400 truncate">Ugandan Afro-Fusion</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- ARTISTS SECTION -->
+                <section id="artists-section" class="hidden-section">
+                    <div class="mb-8">
+                        <h2 class="text-3xl afro-title afro-vibe mb-6">ALL ARTISTS</h2>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                            <!-- Artist Card - PATORANKING -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="patoranking">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/patoranking.jpg" alt="Patoranking" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-blue-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="patoranking">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">PATORANKING</h3>
+                                <p class="text-sm text-gray-400 truncate">Afrobeats Legend</p>
+                                <p class="text-xs text-gray-500 mt-1">2 songs</p>
+                            </div>
+                            
+                            <!-- Artist Card - ADEKUNLE GOLD -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="adekunlegold">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-pink-500/20 to-red-500/20 rounded-lg group-hover:from-pink-500/30 group-hover:to-red-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/adekunlegold.jpg" alt="Adekunle Gold" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-pink-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="adekunlegold">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">ADEKUNLE GOLD</h3>
+                                <p class="text-sm text-gray-400 truncate">Highlife Fusion</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - AYRA STARR -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="ayrastarr">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-blue-400/20 to-cyan-500/20 rounded-lg group-hover:from-blue-400/30 group-hover:to-cyan-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/ayrastarr.jpg" alt="Ayra Starr" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-blue-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="ayrastarr">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">AYRA STARR</h3>
+                                <p class="text-sm text-gray-400 truncate">Afropop Star</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - DAVIDO -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="davido">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg group-hover:from-yellow-500/30 group-hover:to-orange-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/davido.jpg" alt="Davido" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-yellow-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="davido">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">DAVIDO</h3>
+                                <p class="text-sm text-gray-400 truncate">OBO • Afrobeats Icon</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - FIREBOY DML -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="fireboydml">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-lg group-hover:from-red-500/30 group-hover:to-pink-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/fireboydml.jpg" alt="Fireboy DML" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-red-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="fireboydml">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">FIREBOY DML</h3>
+                                <p class="text-sm text-gray-400 truncate">Afro-Life Artist</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                            
+                            <!-- Artist Card - JOSHUA BARAKA -->
+                            <div class="artist-card rounded-lg p-4 cursor-pointer group text-center" data-artist="joshuabaraka">
+                                <div class="relative mb-4">
+                                    <div class="w-full aspect-square bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg group-hover:from-green-500/30 group-hover:to-emerald-500/30 transition-all duration-300 overflow-hidden">
+                                        <img src="images/joshuabaraka.jpg" alt="Joshua Baraka" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-user text-4xl text-green-400\"></i>';">
+                                    </div>
+                                    <button class="absolute bottom-2 right-2 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 view-artist-btn" data-artist="joshuabaraka">
+                                        <i class="fas fa-arrow-right text-white"></i>
+                                    </button>
+                                </div>
+                                <h3 class="font-medium truncate afro-title">JOSHUA BARAKA</h3>
+                                <p class="text-sm text-gray-400 truncate">Ugandan Afro-Fusion</p>
+                                <p class="text-xs text-gray-500 mt-1">1 song</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- FAVORITES SECTION -->
+                <section id="favorites-section" class="hidden-section">
+                    <div class="mb-8">
+                        <h2 class="text-3xl afro-title afro-vibe mb-2">YOUR FAVORITES</h2>
+                        <p class="text-gray-400 mb-6">Songs you've loved</p>
+                        
+                        <!-- Favorites List -->
+                        <div id="favorites-list" class="space-y-2">
+                            <!-- Favorites will appear here dynamically -->
+                            <div class="text-center py-12 text-gray-500" id="no-favorites">
+                                <i class="fas fa-heart text-4xl mb-4"></i>
+                                <p>No favorite songs yet</p>
+                                <p class="text-sm mt-2">Click the heart icon on any song to add it here</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- PATORANKING ARTIST PAGE -->
+                <section id="patoranking-section" class="hidden-section">
+                    <!-- Artist Header -->
+                    <div class="artist-header">
+                        <div class="flex items-end space-x-6">
+                            <div class="w-48 h-48 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg overflow-hidden">
+                                <img src="images/patoranking.jpg" alt="Patoranking" class="w-full h-full object-cover" onerror="this.style.display='none';">
+                                <i class="fas fa-user text-8xl text-white absolute inset-0 flex items-center justify-center" style="display: none;" id="artist-fallback-icon"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-blue-400 mb-2">AFROBEATS LEGEND</p>
+                                <h1 class="text-5xl afro-title mb-4">PATORANKING</h1>
+                                <p class="text-gray-300 mb-2">Afrobeats sensation from Nigeria</p>
+                                <p class="text-sm text-gray-400">2 songs • 7:13 total</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Artist Songs List -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-['Space_Grotesk'] font-semibold mb-4">Popular</h2>
+                        
+                        <div class="space-y-1">
+                            <!-- Song 1 -->
+                            <div class="song-list-item flex items-center justify-between cursor-pointer group relative" data-song="abule">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-10 h-10 flex items-center justify-center">
+                                        <span class="text-gray-400 group-hover:hidden">1</span>
+                                        <i class="fas fa-play text-blue-400 hidden group-hover:block"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">Abule</h3>
+                                        <p class="text-sm text-gray-400 truncate">Patoranking</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">3:45</span>
+                                    <button class="like-btn text-gray-400 hover:text-white p-2" data-song="abule">
+                                        <i class="far fa-heart" id="like-abule"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="abule">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-abule">
+                                            <button class="song-option download" data-song="abule" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="abule" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Song 2 -->
+                            <div class="song-list-item flex items-center justify-between cursor-pointer group relative" data-song="babylon">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-10 h-10 flex items-center justify-center">
+                                        <span class="text-gray-400 group-hover:hidden">2</span>
+                                        <i class="fas fa-play text-blue-400 hidden group-hover:block"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">Babylon</h3>
+                                        <p class="text-sm text-gray-400 truncate">Patoranking feat. Victony</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">3:28</span>
+                                    <button class="like-btn text-gray-400 hover:text-white p-2" data-song="babylon">
+                                        <i class="far fa-heart" id="like-babylon"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="babylon">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-babylon">
+                                            <button class="song-option download" data-song="babylon" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="babylon" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Play All Button -->
+                    <div class="mb-8">
+                        <button class="px-8 py-3 bg-blue-500 text-white rounded-full font-medium hover:bg-blue-600 transition-colors duration-200 flex items-center space-x-2" id="play-all-btn">
+                            <i class="fas fa-play"></i>
+                            <span>Play All</span>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- ADEKUNLE GOLD ARTIST PAGE -->
+                <section id="adekunlegold-section" class="hidden-section">
+                    <!-- Artist Header -->
+                    <div class="artist-header">
+                        <div class="flex items-end space-x-6">
+                            <div class="w-48 h-48 bg-gradient-to-br from-pink-500 to-red-500 rounded-lg overflow-hidden">
+                                <img src="images/adekunlegold.jpg" alt="Adekunle Gold" class="w-full h-full object-cover" onerror="this.style.display='none';">
+                                <i class="fas fa-user text-8xl text-white absolute inset-0 flex items-center justify-center" style="display: none;"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-pink-400 mb-2">HIGHLIFE FUSION</p>
+                                <h1 class="text-5xl afro-title mb-4">ADEKUNLE GOLD</h1>
+                                <p class="text-gray-300 mb-2">Nigerian highlife and afrobeats artist</p>
+                                <p class="text-sm text-gray-400">1 song • 2:52 total</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Artist Songs List -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-['Space_Grotesk'] font-semibold mb-4">Popular</h2>
+                        
+                        <div class="space-y-1">
+                            <!-- Song -->
+                            <div class="song-list-item flex items-center justify-between cursor-pointer group relative" data-song="sinner">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-10 h-10 flex items-center justify-center">
+                                        <span class="text-gray-400 group-hover:hidden">1</span>
+                                        <i class="fas fa-play text-pink-400 hidden group-hover:block"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">Sinner</h3>
+                                        <p class="text-sm text-gray-400 truncate">Adekunle Gold, Lucky Daye</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">2:52</span>
+                                    <button class="like-btn text-gray-400 hover:text-white p-2" data-song="sinner">
+                                        <i class="far fa-heart" id="like-sinner"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="sinner">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-sinner">
+                                            <button class="song-option download" data-song="sinner" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="sinner" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Play All Button -->
+                    <div class="mb-8">
+                        <button class="px-8 py-3 bg-pink-500 text-white rounded-full font-medium hover:bg-pink-600 transition-colors duration-200 flex items-center space-x-2" id="play-all-adekunle">
+                            <i class="fas fa-play"></i>
+                            <span>Play All</span>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- AYRA STARR ARTIST PAGE -->
+                <section id="ayrastarr-section" class="hidden-section">
+                    <!-- Artist Header -->
+                    <div class="artist-header">
+                        <div class="flex items-end space-x-6">
+                            <div class="w-48 h-48 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg overflow-hidden">
+                                <img src="images/ayrastarr.jpg" alt="Ayra Starr" class="w-full h-full object-cover" onerror="this.style.display='none';">
+                                <i class="fas fa-user text-8xl text-white absolute inset-0 flex items-center justify-center" style="display: none;"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-blue-400 mb-2">AFROPOP STAR</p>
+                                <h1 class="text-5xl afro-title mb-4">AYRA STARR</h1>
+                                <p class="text-gray-300 mb-2">Beninese-Nigerian singer and songwriter</p>
+                                <p class="text-sm text-gray-400">1 song • 3:22 total</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Artist Songs List -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-['Space_Grotesk'] font-semibold mb-4">Popular</h2>
+                        
+                        <div class="space-y-1">
+                            <!-- Song -->
+                            <div class="song-list-item flex items-center justify-between cursor-pointer group relative" data-song="beggiebeggie">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-10 h-10 flex items-center justify-center">
+                                        <span class="text-gray-400 group-hover:hidden">1</span>
+                                        <i class="fas fa-play text-blue-400 hidden group-hover:block"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">Beggie Beggie</h3>
+                                        <p class="text-sm text-gray-400 truncate">Ayra Starr ft. CKay</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">3:22</span>
+                                    <button class="like-btn text-gray-400 hover:text-white p-2" data-song="beggiebeggie">
+                                        <i class="far fa-heart" id="like-beggiebeggie"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="beggiebeggie">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-beggiebeggie">
+                                            <button class="song-option download" data-song="beggiebeggie" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="beggiebeggie" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Play All Button -->
+                    <div class="mb-8">
+                        <button class="px-8 py-3 bg-blue-400 text-white rounded-full font-medium hover:bg-blue-500 transition-colors duration-200 flex items-center space-x-2" id="play-all-ayra">
+                            <i class="fas fa-play"></i>
+                            <span>Play All</span>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- DAVIDO ARTIST PAGE -->
+                <section id="davido-section" class="hidden-section">
+                    <!-- Artist Header -->
+                    <div class="artist-header">
+                        <div class="flex items-end space-x-6">
+                            <div class="w-48 h-48 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg overflow-hidden">
+                                <img src="images/davido.jpg" alt="Davido" class="w-full h-full object-cover" onerror="this.style.display='none';">
+                                <i class="fas fa-user text-8xl text-white absolute inset-0 flex items-center justify-center" style="display: none;"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-yellow-400 mb-2">AFROBEATS ICON</p>
+                                <h1 class="text-5xl afro-title mb-4">DAVIDO</h1>
+                                <p class="text-gray-300 mb-2">OBO • Nigerian afrobeats superstar</p>
+                                <p class="text-sm text-gray-400">1 song • 3:14 total</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Artist Songs List -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-['Space_Grotesk'] font-semibold mb-4">Popular</h2>
+                        
+                        <div class="space-y-1">
+                            <!-- Song -->
+                            <div class="song-list-item flex items-center justify-between cursor-pointer group relative" data-song="kante">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-10 h-10 flex items-center justify-center">
+                                        <span class="text-gray-400 group-hover:hidden">1</span>
+                                        <i class="fas fa-play text-yellow-400 hidden group-hover:block"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">Kante</h3>
+                                        <p class="text-sm text-gray-400 truncate">Davido ft. Fave</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">3:14</span>
+                                    <button class="like-btn text-gray-400 hover:text-white p-2" data-song="kante">
+                                        <i class="far fa-heart" id="like-kante"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="kante">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-kante">
+                                            <button class="song-option download" data-song="kante" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="kante" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Play All Button -->
+                    <div class="mb-8">
+                        <button class="px-8 py-3 bg-yellow-500 text-white rounded-full font-medium hover:bg-yellow-600 transition-colors duration-200 flex items-center space-x-2" id="play-all-davido">
+                            <i class="fas fa-play"></i>
+                            <span>Play All</span>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- FIREBOY DML ARTIST PAGE -->
+                <section id="fireboydml-section" class="hidden-section">
+                    <!-- Artist Header -->
+                    <div class="artist-header">
+                        <div class="flex items-end space-x-6">
+                            <div class="w-48 h-48 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg overflow-hidden">
+                                <img src="images/fireboydml.jpg" alt="Fireboy DML" class="w-full h-full object-cover" onerror="this.style.display='none';">
+                                <i class="fas fa-user text-8xl text-white absolute inset-0 flex items-center justify-center" style="display: none;"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-red-400 mb-2">AFRO-LIFE ARTIST</p>
+                                <h1 class="text-5xl afro-title mb-4">FIREBOY DML</h1>
+                                <p class="text-gray-300 mb-2">Nigerian singer and songwriter</p>
+                                <p class="text-sm text-gray-400">1 song • 3:27 total</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Artist Songs List -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-['Space_Grotesk'] font-semibold mb-4">Popular</h2>
+                        
+                        <div class="space-y-1">
+                            <!-- Song -->
+                            <div class="song-list-item flex items-center justify-between cursor-pointer group relative" data-song="playboy">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-10 h-10 flex items-center justify-center">
+                                        <span class="text-gray-400 group-hover:hidden">1</span>
+                                        <i class="fas fa-play text-red-400 hidden group-hover:block"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">Playboy</h3>
+                                        <p class="text-sm text-gray-400 truncate">Fireboy DML</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">3:27</span>
+                                    <button class="like-btn text-gray-400 hover:text-white p-2" data-song="playboy">
+                                        <i class="far fa-heart" id="like-playboy"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="playboy">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-playboy">
+                                            <button class="song-option download" data-song="playboy" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="playboy" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Play All Button -->
+                    <div class="mb-8">
+                        <button class="px-8 py-3 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors duration-200 flex items-center space-x-2" id="play-all-fireboy">
+                            <i class="fas fa-play"></i>
+                            <span>Play All</span>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- JOSHUA BARAKA ARTIST PAGE -->
+                <section id="joshuabaraka-section" class="hidden-section">
+                    <!-- Artist Header -->
+                    <div class="artist-header">
+                        <div class="flex items-end space-x-6">
+                            <div class="w-48 h-48 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg overflow-hidden">
+                                <img src="images/joshuabaraka.jpg" alt="Joshua Baraka" class="w-full h-full object-cover" onerror="this.style.display='none';">
+                                <i class="fas fa-user text-8xl text-white absolute inset-0 flex items-center justify-center" style="display: none;"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-green-400 mb-2">UGANDAN AFRO-FUSION</p>
+                                <h1 class="text-5xl afro-title mb-4">JOSHUA BARAKA</h1>
+                                <p class="text-gray-300 mb-2">Ugandan singer and songwriter</p>
+                                <p class="text-sm text-gray-400">1 song • 3:18 total</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Artist Songs List -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-['Space_Grotesk'] font-semibold mb-4">Popular</h2>
+                        
+                        <div class="space-y-1">
+                            <!-- Song -->
+                            <div class="song-list-item flex items-center justify-between cursor-pointer group relative" data-song="wrongplaces">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-10 h-10 flex items-center justify-center">
+                                        <span class="text-gray-400 group-hover:hidden">1</span>
+                                        <i class="fas fa-play text-green-400 hidden group-hover:block"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">Wrong Places</h3>
+                                        <p class="text-sm text-gray-400 truncate">Joshua Baraka x Jae5</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">3:18</span>
+                                    <button class="like-btn text-gray-400 hover:text-white p-2" data-song="wrongplaces">
+                                        <i class="far fa-heart" id="like-wrongplaces"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="wrongplaces">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-wrongplaces">
+                                            <button class="song-option download" data-song="wrongplaces" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="wrongplaces" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Play All Button -->
+                    <div class="mb-8">
+                        <button class="px-8 py-3 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors duration-200 flex items-center space-x-2" id="play-all-joshua">
+                            <i class="fas fa-play"></i>
+                            <span>Play All</span>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- WAVES SECTION -->
+                <section id="waves-section" class="hidden-section">
+                    <h2 class="text-2xl afro-title afro-vibe mb-6">YOUR WAVES</h2>
+                    <p class="text-gray-400">Playlists will appear here</p>
+                </section>
+                
+                <!-- MOODS SECTION -->
+                <section id="moods-section" class="hidden-section">
+                    <h2 class="text-2xl afro-title afro-vibe mb-6">MOODS & GENRES</h2>
+                    <p class="text-gray-400">Mood-based playlists will appear here</p>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Bottom Player -->
+    <footer class="h-20 border-t border-gray-800 bg-[#121218]/95 backdrop-blur-lg px-6">
+        <div class="h-full flex items-center justify-between">
+            
+            <!-- Now Playing Info -->
+            <div class="flex items-center space-x-4 w-64">
+                <div class="w-12 h-12 rounded-lg overflow-hidden" id="player-album-art">
+                    <img src="" alt="" class="w-full h-full object-cover" id="player-album-img" onerror="this.style.display='none'; this.parentElement.className='w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center'; this.parentElement.innerHTML='<i class=\"fas fa-music text-white\"></i>';">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate" id="current-song">Abule</p>
+                    <p class="text-xs text-gray-400 truncate" id="current-artist">Patoranking</p>
+                </div>
+                <button class="text-gray-400 hover:text-white" id="like-btn">
+                    <i class="far fa-heart"></i>
+                </button>
+            </div>
+            
+            <!-- Player Controls -->
+            <div class="flex-1 max-w-2xl">
+                <div class="flex flex-col items-center space-y-2">
+                    <!-- Controls -->
+                    <div class="flex items-center space-x-6 player-controls">
+                        <button class="text-gray-400 hover:text-white" id="prev-btn">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        
+                        <button id="play-pause" class="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-105">
+                            <i id="play-icon" class="fas fa-play text-black"></i>
+                            <i id="pause-icon" class="fas fa-pause text-black hidden"></i>
+                        </button>
+                        
+                        <button class="text-gray-400 hover:text-white" id="next-btn">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="w-full flex items-center space-x-4">
+                        <span class="text-xs text-gray-400 font-['JetBrains_Mono']" id="current-time">0:00</span>
+                        <div class="flex-1 waveform-progress cursor-pointer" id="progress-bar">
+                            <div class="waveform-progress-fill" id="progress-fill"></div>
+                        </div>
+                        <span class="text-xs text-gray-400 font-['JetBrains_Mono']" id="duration">3:45</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Controls -->
+            <div class="w-64 flex items-center justify-end space-x-4">
+                <!-- Visualizer -->
+                <div class="flex items-end space-x-1 h-6" id="visualizer">
+                    <div class="visualizer-bar w-1 bg-blue-400 rounded-t"></div>
+                    <div class="visualizer-bar w-1 bg-purple-400 rounded-t"></div>
+                    <div class="visualizer-bar w-1 bg-blue-400 rounded-t"></div>
+                    <div class="visualizer-bar w-1 bg-purple-400 rounded-t"></div>
+                    <div class="visualizer-bar w-1 bg-blue-400 rounded-t"></div>
+                </div>
+                
+                <!-- Volume -->
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-volume-up text-gray-400" id="volume-icon"></i>
+                    <input type="range" min="0" max="100" value="70" class="volume-slider" id="volume-slider">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio Players -->
+    <audio id="song-abule" loop>
+        <source src="Music/Patoranking - Abule (Official Video) - PatorankingVEVO.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="song-babylon" loop>
+        <source src="Music/Patoranking - BABYLON [Feat. Victony] (Official Music Video) - Patoranking.mp3" type="audio/mpeg">
+    </audio>
+    
+    <!-- New Audio Players -->
+    <audio id="song-sinner" loop>
+        <source src="Music/Adekunle Gold, Lucky Daye - Sinner.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="song-beggiebeggie" loop>
+        <source src="Music/Ayra Starr - Beggie Beggie ft. Ckay.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="song-kante" loop>
+        <source src="Music/Davido - Kante Ft Fave (Lyrics).mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="song-playboy" loop>
+        <source src="Music/Fireboy DML - Playboy.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="song-wrongplaces" loop>
+        <source src="Music/Joshua Baraka x Jae5 - Wrong Places.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // =============================================
+        // AUTHENTICATION MANAGEMENT
+        // =============================================
+        
+        // Authentication state
+        let authState = {
+            isAuthenticated: false,
+            user: null,
+            token: null
+        };
+        
+        // API Base URL (Replace with your actual backend URL)
+        const API_BASE_URL = 'http://localhost:3000/api'; // Change this in production
+        
+        // DOM Elements for Auth
+        const authModal = document.getElementById('auth-modal');
+        const loginButton = document.getElementById('login-button');
+        const getStartedButton = document.getElementById('get-started-button');
+        const welcomeLoginButton = document.getElementById('welcome-login');
+        const userProfile = document.getElementById('user-profile');
+        const userName = document.getElementById('user-name');
+        const userInitials = document.getElementById('user-initials');
+        const userGreeting = document.getElementById('user-greeting');
+        const dropdownName = document.getElementById('dropdown-name');
+        const dropdownEmail = document.getElementById('dropdown-email');
+        const dropdownInitials = document.getElementById('dropdown-initials');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const homeSection = document.getElementById('home-section');
+        const logoutButton = document.getElementById('logout-button');
+        const userDropdown = document.querySelector('.user-dropdown');
+        const userMenu = document.querySelector('.user-menu');
+        
+        // Form elements
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const switchToSignupButtons = document.querySelectorAll('.switch-to-signup');
+        const switchToLoginButtons = document.querySelectorAll('.switch-to-login');
+        
+        // Login form
+        const loginEmailInput = document.getElementById('login-email');
+        const loginPasswordInput = document.getElementById('login-password');
+        const loginSecretCodeInput = document.getElementById('login-secret-code');
+        const loginSecretCodeSection = document.getElementById('login-secret-code-section');
+        
+        // Signup form
+        const signupDisplayNameInput = document.getElementById('signup-display-name');
+        const signupEmailInput = document.getElementById('signup-email');
+        const signupPasswordInput = document.getElementById('signup-password');
+        const signupConfirmPasswordInput = document.getElementById('signup-confirm-password');
+        const signupSecretCodeInput = document.getElementById('signup-secret-code');
+        const passwordStrength = document.getElementById('password-strength');
+        
+        // Demo account buttons
+        const demoAccountButtons = document.querySelectorAll('.demo-account-btn');
+        
+        // Initialize auth state from localStorage
+        function initAuthState() {
+            const storedToken = localStorage.getItem('soundwave_token');
+            const storedUser = localStorage.getItem('soundwave_user');
+            
+            if (storedToken && storedUser) {
+                try {
+                    authState.token = storedToken;
+                    authState.user = JSON.parse(storedUser);
+                    authState.isAuthenticated = true;
+                    
+                    updateUIForAuthState();
+                } catch (e) {
+                    console.error('Error parsing stored user data:', e);
+                    clearAuthState();
+                }
+            } else {
+                updateUIForAuthState();
+            }
+        }
+        
+        // Update UI based on authentication state
+        function updateUIForAuthState() {
+            if (authState.isAuthenticated && authState.user) {
+                // User is logged in
+                loginButton.style.display = 'none';
+                userProfile.style.display = 'flex';
+                welcomeMessage.style.display = 'none';
+                homeSection.classList.remove('hidden-section');
+                
+                // Update user info
+                const displayName = authState.user.displayName || authState.user.email.split('@')[0];
+                const initials = getInitials(displayName);
+                
+                userName.textContent = displayName;
+                userInitials.textContent = initials;
+                userGreeting.textContent = displayName;
+                dropdownName.textContent = displayName;
+                dropdownEmail.textContent = authState.user.email;
+                dropdownInitials.textContent = initials;
+                
+                // Enable navigation links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.style.pointerEvents = 'auto';
+                    link.style.opacity = '1';
+                });
+            } else {
+                // User is not logged in
+                loginButton.style.display = 'block';
+                userProfile.style.display = 'none';
+                welcomeMessage.style.display = 'block';
+                homeSection.classList.add('hidden-section');
+                
+                // Hide other content sections
+                document.querySelectorAll('section[id$="-section"]').forEach(section => {
+                    if (section.id !== 'home-section') {
+                        section.classList.add('hidden-section');
+                    }
+                });
+                
+                // Enable navigation links (changed from disabling)
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.style.pointerEvents = 'auto';
+                    link.style.opacity = '1';
+                });
+            }
+        }
+        
+        // Get initials from name
+        function getInitials(name) {
+            return name
+                .split(' ')
+                .map(part => part[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
+        
+        // Show auth modal
+        function showAuthModal(initialForm = 'login') {
+            authModal.classList.add('active');
+            
+            // Set initial form
+            if (initialForm === 'signup') {
+                switchToSignup();
+            } else {
+                switchToLogin();
+            }
+        }
+        
+        // Hide auth modal
+        function hideAuthModal() {
+            authModal.classList.remove('active');
+            clearAuthErrors();
+        }
+        
+        // Switch to login form
+        function switchToLogin() {
+            authTabs.forEach(tab => tab.classList.remove('active'));
+            authTabs[0].classList.add('active');
+            
+            loginForm.classList.add('active');
+            signupForm.classList.remove('active');
+            
+            clearAuthErrors();
+        }
+        
+        // Switch to signup form
+        function switchToSignup() {
+            authTabs.forEach(tab => tab.classList.remove('active'));
+            authTabs[1].classList.add('active');
+            
+            loginForm.classList.remove('active');
+            signupForm.classList.add('active');
+            
+            clearAuthErrors();
+        }
+        
+        // Clear auth form errors
+        function clearAuthErrors() {
+            document.querySelectorAll('[id$="-error"]').forEach(el => {
+                el.textContent = '';
+            });
+        }
+        
+        // Validate email format
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+        
+        // Check password strength
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            return strength;
+        }
+        
+        // Update password strength indicator
+        function updatePasswordStrength() {
+            const password = signupPasswordInput.value;
+            const strength = checkPasswordStrength(password);
+            
+            passwordStrength.className = 'password-strength';
+            
+            if (password.length === 0) {
+                return;
+            }
+            
+            if (strength < 3) {
+                passwordStrength.classList.add('weak');
+            } else if (strength < 5) {
+                passwordStrength.classList.add('medium');
+            } else {
+                passwordStrength.classList.add('strong');
+            }
+        }
+        
+        // Validate signup form
+        function validateSignupForm() {
+            let isValid = true;
+            clearAuthErrors();
+            
+            // Validate email
+            const email = signupEmailInput.value.trim();
+            if (!email) {
+                document.getElementById('signup-email-error').textContent = 'Email is required';
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                document.getElementById('signup-email-error').textContent = 'Please enter a valid email';
+                isValid = false;
+            }
+            
+            // Validate password
+            const password = signupPasswordInput.value;
+            if (!password) {
+                document.getElementById('signup-password-error').textContent = 'Password is required';
+                isValid = false;
+            } else if (password.length < 8) {
+                document.getElementById('signup-password-error').textContent = 'Password must be at least 8 characters';
+                isValid = false;
+            } else if (checkPasswordStrength(password) < 3) {
+                document.getElementById('signup-password-error').textContent = 'Password is too weak. Use uppercase, lowercase, and numbers';
+                isValid = false;
+            }
+            
+            // Validate password confirmation
+            const confirmPassword = signupConfirmPasswordInput.value;
+            if (password !== confirmPassword) {
+                document.getElementById('signup-confirm-error').textContent = 'Passwords do not match';
+                isValid = false;
+            }
+            
+            // Validate terms agreement
+            const termsAgreed = document.getElementById('terms-agreement').checked;
+            if (!termsAgreed) {
+                showNotification('You must agree to the terms and conditions', 'error');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Validate login form
+        function validateLoginForm() {
+            let isValid = true;
+            clearAuthErrors();
+            
+            // Validate email
+            const email = loginEmailInput.value.trim();
+            if (!email) {
+                document.getElementById('login-email-error').textContent = 'Email is required';
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                document.getElementById('login-email-error').textContent = 'Please enter a valid email';
+                isValid = false;
+            }
+            
+            // Validate password
+            const password = loginPasswordInput.value;
+            if (!password) {
+                document.getElementById('login-password-error').textContent = 'Password is required';
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Handle signup
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            if (!validateSignupForm()) {
+                return;
+            }
+            
+            const userData = {
+                displayName: signupDisplayNameInput.value.trim() || null,
+                email: signupEmailInput.value.trim(),
+                password: signupPasswordInput.value,
+                secretCode: signupSecretCodeInput.value.trim() || null
+            };
+            
+            try {
+                showLoading(true);
+                
+                // In a real app, you would make an API call here
+                // const response = await fetch(`${API_BASE_URL}/signup`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(userData)
+                // });
+                
+                // For demo purposes, we'll simulate a successful signup
+                await simulateApiCall(1500);
+                
+                // Simulate API response
+                const mockResponse = {
+                    success: true,
+                    message: 'Account created successfully!',
+                    user: {
+                        id: 'user_' + Date.now(),
+                        displayName: userData.displayName || userData.email.split('@')[0],
+                        email: userData.email,
+                        hasSecretCode: !!userData.secretCode,
+                        createdAt: new Date().toISOString()
+                    },
+                    token: 'mock_jwt_token_' + Date.now()
+                };
+                
+                // Store auth data
+                authState.isAuthenticated = true;
+                authState.user = mockResponse.user;
+                authState.token = mockResponse.token;
+                
+                localStorage.setItem('soundwave_token', mockResponse.token);
+                localStorage.setItem('soundwave_user', JSON.stringify(mockResponse.user));
+                
+                // Update UI
+                updateUIForAuthState();
+                
+                // Hide modal and show success
+                hideAuthModal();
+                showNotification('Account created successfully! Welcome to Sound Wave!', 'success');
+                
+                // Clear form
+                event.target.reset();
+                passwordStrength.className = 'password-strength';
+                
+            } catch (error) {
+                console.error('Signup error:', error);
+                showNotification(error.message || 'Signup failed. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            if (!validateLoginForm()) {
+                return;
+            }
+            
+            const loginData = {
+                email: loginEmailInput.value.trim(),
+                password: loginPasswordInput.value,
+                secretCode: loginSecretCodeInput.value.trim() || null
+            };
+            
+            try {
+                showLoading(true);
+                
+                // In a real app, you would make an API call here
+                // const response = await fetch(`${API_BASE_URL}/login`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(loginData)
+                // });
+                
+                // For demo purposes, we'll simulate a successful login
+                await simulateApiCall(1200);
+                
+                // Check for demo accounts
+                let mockResponse;
+                
+                if (loginData.email === 'user@demo.com' && loginData.password === 'demo123') {
+                    mockResponse = {
+                        success: true,
+                        message: 'Login successful!',
+                        user: {
+                            id: 'demo_user_001',
+                            displayName: 'Demo User',
+                            email: 'user@demo.com',
+                            hasSecretCode: false,
+                            createdAt: new Date().toISOString()
+                        },
+                        token: 'demo_token_user'
+                    };
+                } else if (loginData.email === 'admin@demo.com' && loginData.password === 'admin123') {
+                    // Check secret code for admin
+                    if (loginData.secretCode !== '88004') {
+                        throw new Error('Invalid secret code');
+                    }
+                    
+                    mockResponse = {
+                        success: true,
+                        message: 'Login successful!',
+                        user: {
+                            id: 'demo_admin_001',
+                            displayName: 'Demo Admin',
+                            email: 'admin@demo.com',
+                            hasSecretCode: true,
+                            createdAt: new Date().toISOString()
+                        },
+                        token: 'demo_token_admin'
+                    };
+                } else {
+                    // Simulate invalid credentials
+                    throw new Error('Invalid email or password');
+                }
+                
+                // Store auth data
+                authState.isAuthenticated = true;
+                authState.user = mockResponse.user;
+                authState.token = mockResponse.token;
+                
+                localStorage.setItem('soundwave_token', mockResponse.token);
+                localStorage.setItem('soundwave_user', JSON.stringify(mockResponse.user));
+                
+                // Update UI
+                updateUIForAuthState();
+                
+                // Hide modal and show success
+                hideAuthModal();
+                showNotification('Welcome back to Sound Wave!', 'success');
+                
+                // Clear form
+                event.target.reset();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                if (error.message.includes('secret code')) {
+                    document.getElementById('login-secret-code-error').textContent = error.message;
+                    loginSecretCodeSection.style.display = 'block';
+                } else {
+                    showNotification(error.message || 'Login failed. Please check your credentials.', 'error');
+                }
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Handle logout
+        function handleLogout() {
+            // Clear auth state
+            clearAuthState();
+            
+            // Update UI
+            updateUIForAuthState();
+            
+            // Hide dropdown
+            userDropdown.classList.remove('active');
+            
+            // Show notification
+            showNotification('You have been logged out successfully.', 'success');
+        }
+        
+        // Clear auth state
+        function clearAuthState() {
+            authState.isAuthenticated = false;
+            authState.user = null;
+            authState.token = null;
+            
+            localStorage.removeItem('soundwave_token');
+            localStorage.removeItem('soundwave_user');
+        }
+        
+        // Show loading state
+        function showLoading(isLoading) {
+            const submitButtons = document.querySelectorAll('.auth-form button[type="submit"]');
+            
+            submitButtons.forEach(button => {
+                if (isLoading) {
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+                    button.disabled = true;
+                } else {
+                    if (button.closest('#login-form')) {
+                        button.textContent = 'Sign In';
+                    } else {
+                        button.textContent = 'Create Account';
+                    }
+                    button.disabled = false;
+                }
+            });
+        }
+        
+        // Simulate API call (for demo)
+        function simulateApiCall(delay) {
+            return new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        // =============================================
+        // EVENT LISTENERS FOR AUTH
+        // =============================================
+        
+        // Show auth modal buttons
+        loginButton.addEventListener('click', () => showAuthModal('login'));
+        getStartedButton.addEventListener('click', () => showAuthModal('signup'));
+        welcomeLoginButton.addEventListener('click', () => showAuthModal('login'));
+        
+        // Auth modal close on background click
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) {
+                hideAuthModal();
+            }
+        });
+        
+        // Auth tabs
+        authTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const form = tab.dataset.form;
+                if (form === 'login') {
+                    switchToLogin();
+                } else {
+                    switchToSignup();
+                }
+            });
+        });
+        
+        // Switch between forms
+        switchToSignupButtons.forEach(button => {
+            button.addEventListener('click', switchToSignup);
+        });
+        
+        switchToLoginButtons.forEach(button => {
+            button.addEventListener('click', switchToLogin);
+        });
+        
+        // Form submissions
+        loginForm.addEventListener('submit', handleSignup);
+        signupForm.addEventListener('submit', handleLogin);
+        
+        // Password strength indicator
+        signupPasswordInput.addEventListener('input', updatePasswordStrength);
+        
+        // Demo account buttons
+        demoAccountButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const email = button.dataset.email;
+                const password = button.dataset.password;
+                const secret = button.dataset.secret;
+                
+                loginEmailInput.value = email;
+                loginPasswordInput.value = password;
+                
+                if (secret) {
+                    loginSecretCodeSection.style.display = 'block';
+                    loginSecretCodeInput.value = secret;
+                } else {
+                    loginSecretCodeSection.style.display = 'none';
+                    loginSecretCodeInput.value = '';
+                }
+                
+                // Switch to login form
+                switchToLogin();
+            });
+        });
+        
+        // User profile dropdown
+        userProfile.addEventListener('click', () => {
+            userDropdown.classList.toggle('active');
+        });
+        
+        // Logout
+        logoutButton.addEventListener('click', handleLogout);
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!userMenu.contains(e.target)) {
+                userDropdown.classList.remove('active');
+            }
+        });
+        
+        // =============================================
+        // ENHANCED MUSIC PLAYER FUNCTIONALITY
+        // =============================================
+        
+        // DOM Elements
+        const audioPlayers = {
+            'abule': document.getElementById('song-abule'),
+            'babylon': document.getElementById('song-babylon'),
+            'sinner': document.getElementById('song-sinner'),
+            'beggiebeggie': document.getElementById('song-beggiebeggie'),
+            'kante': document.getElementById('song-kante'),
+            'playboy': document.getElementById('song-playboy'),
+            'wrongplaces': document.getElementById('song-wrongplaces')
+        };
+        
+        const playPauseBtn = document.getElementById('play-pause');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeIcon = document.getElementById('volume-icon');
+        const currentSongEl = document.getElementById('current-song');
+        const currentArtistEl = document.getElementById('current-artist');
+        const sidebarSongEl = document.getElementById('sidebar-song');
+        const sidebarArtistEl = document.getElementById('sidebar-artist');
+        const sidebarAlbumImg = document.getElementById('sidebar-album-img');
+        const sidebarAlbumArt = document.getElementById('sidebar-album-art');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationEl = document.getElementById('duration');
+        const progressBar = document.getElementById('progress-bar');
+        const progressFill = document.getElementById('progress-fill');
+        const playerLikeBtn = document.getElementById('like-btn');
+        const playerAlbumArt = document.getElementById('player-album-art');
+        const playerAlbumImg = document.getElementById('player-album-img');
+        const visualizer = document.getElementById('visualizer');
+        const reactiveBg = document.getElementById('reactive-bg');
+        const contentArea = document.getElementById('content-area');
+        const favoritesList = document.getElementById('favorites-list');
+        const noFavorites = document.getElementById('no-favorites');
+        
+        // Song Info Modal Elements
+        const songInfoModal = document.getElementById('song-info-modal');
+        const songInfoTitle = document.getElementById('song-info-title');
+        const songInfoArtist = document.getElementById('song-info-artist');
+        const songInfoImage = document.getElementById('song-info-image');
+        const songInfoImg = document.getElementById('song-info-img');
+        const songInfoDuration = document.getElementById('song-info-duration');
+        const songInfoYear = document.getElementById('song-info-year');
+        const songInfoGenre = document.getElementById('song-info-genre');
+        const songInfoBitrate = document.getElementById('song-info-bitrate');
+        const songInfoAlbum = document.getElementById('song-info-album');
+        const songInfoDescription = document.getElementById('song-info-description');
+        const songInfoPlayBtn = document.getElementById('song-info-play-btn');
+        
+        // Player State
+        let currentSong = 'abule';
+        let isPlaying = false;
+        let currentPlaylist = []; // Current playlist/artist songs
+        let currentSongIndex = 0;
+        
+        // Favorites State
+        let favorites = JSON.parse(localStorage.getItem('soundwave_favorites')) || [];
+        
+        // Song Metadata with Detailed Information
+        const songData = {
+            'abule': {
+                title: 'Abule',
+                artist: 'Patoranking',
+                duration: '3:45',
+                color: 'from-blue-500 to-purple-500',
+                gradient: 'gradient-patoranking',
+                artistImg: 'images/patoranking.jpg',
+                year: '2020',
+                genre: 'Afrobeats',
+                bitrate: '320 kbps',
+                album: 'Three',
+                description: 'A vibrant afrobeats track celebrating life and joy.',
+                lyrics: 'Abule is a Yoruba word meaning "village" - the song celebrates simple life and happiness.',
+                releaseDate: 'January 2020',
+                producer: 'Pheelz'
+            },
+            'babylon': {
+                title: 'Babylon',
+                artist: 'Patoranking feat. Victony',
+                duration: '3:28',
+                color: 'from-purple-500 to-pink-500',
+                gradient: 'gradient-patoranking',
+                artistImg: 'images/patoranking.jpg',
+                year: '2021',
+                genre: 'Afrobeats',
+                bitrate: '320 kbps',
+                album: 'Babylon (Single)',
+                description: 'Collaboration between Patoranking and Victony about overcoming challenges.',
+                lyrics: 'Babylon represents struggles and challenges in life that one must overcome.',
+                releaseDate: 'May 2021',
+                producer: 'Rexxie'
+            },
+            'sinner': {
+                title: 'Sinner',
+                artist: 'Adekunle Gold, Lucky Daye',
+                duration: '2:52',
+                color: 'from-pink-500 to-red-500',
+                gradient: 'gradient-adekunle',
+                artistImg: 'images/adekunlegold.jpg',
+                year: '2023',
+                genre: 'Afrobeats • R&B',
+                bitrate: '320 kbps',
+                album: 'Tequila Ever After',
+                description: 'A smooth collaboration blending afrobeats with contemporary R&B.',
+                lyrics: 'A song about love and imperfections in relationships.',
+                releaseDate: 'July 2023',
+                producer: 'Blaise Beats'
+            },
+            'beggiebeggie': {
+                title: 'Beggie Beggie',
+                artist: 'Ayra Starr ft. CKay',
+                duration: '3:22',
+                color: 'from-blue-400 to-cyan-500',
+                gradient: 'gradient-ayra',
+                artistImg: 'images/ayrastarr.jpg',
+                year: '2021',
+                genre: 'Afropop • R&B',
+                bitrate: '320 kbps',
+                album: '19 & Dangerous',
+                description: 'A romantic afropop track about mutual love and affection.',
+                lyrics: 'The title is Nigerian Pidgin for "begging" - expressing deep affection.',
+                releaseDate: 'August 2021',
+                producer: 'London'
+            },
+            'kante': {
+                title: 'Kante',
+                artist: 'Davido ft. Fave',
+                duration: '3:14',
+                color: 'from-yellow-500 to-orange-500',
+                gradient: 'gradient-davido',
+                artistImg: 'images/davido.jpg',
+                year: '2022',
+                genre: 'Afrobeats',
+                bitrate: '320 kbps',
+                album: 'Timeless',
+                description: 'Upbeat afrobeats track featuring Davido and Fave.',
+                lyrics: 'Kante means "sing" in Yoruba - a celebration of music and dance.',
+                releaseDate: 'March 2023',
+                producer: 'Magicsticks'
+            },
+            'playboy': {
+                title: 'Playboy',
+                artist: 'Fireboy DML',
+                duration: '3:27',
+                color: 'from-red-500 to-pink-500',
+                gradient: 'gradient-fireboy',
+                artistImg: 'images/fireboydml.jpg',
+                year: '2022',
+                genre: 'Afrobeats • Pop',
+                bitrate: '320 kbps',
+                album: 'Playboy',
+                description: 'A confident track about living life on your own terms.',
+                lyrics: 'Fireboy explores themes of freedom and self-expression.',
+                releaseDate: 'August 2022',
+                producer: 'P.Priime'
+            },
+            'wrongplaces': {
+                title: 'Wrong Places',
+                artist: 'Joshua Baraka x Jae5',
+                duration: '3:18',
+                color: 'from-green-500 to-emerald-500',
+                gradient: 'gradient-joshua',
+                artistImg: 'images/joshuabaraka.jpg',
+                year: '2023',
+                genre: 'Afro-Fusion • Dancehall',
+                bitrate: '320 kbps',
+                album: 'Watershed (EP)',
+                description: 'Ugandan-British fusion blending afrobeats with dancehall.',
+                lyrics: 'A song about making mistakes in relationships and life choices.',
+                releaseDate: 'June 2023',
+                producer: 'Jae5'
+            }
+        };
+        
+        // Navigation State
+        let currentSection = 'home';
+        let activeOptionsMenu = null;
+        
+        // Initialize
+        function init() {
+            // Initialize auth state first
+            initAuthState();
+            
+            // Then initialize player
+            updatePlayerUI();
+            updateFavoritesUI();
+            setVolume(volumeSlider.value / 100);
+            
+            // Add event listeners to play buttons
+            document.querySelectorAll('.play-song-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const song = e.target.closest('[data-song]').dataset.song;
+                    playSong(song);
+                });
+            });
+            
+            // Add event listeners to song cards
+            document.querySelectorAll('[data-song]').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('button') && !e.target.closest('.song-options-menu')) {
+                        const song = card.dataset.song;
+                        playSong(song);
+                    }
+                });
+            });
+            
+            // Navigation event listeners
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const section = link.dataset.section;
+                    showSection(section);
+                });
+            });
+            
+            // Artist card event listeners
+            document.querySelectorAll('[data-artist]').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('button')) {
+                        const artist = card.dataset.artist;
+                        showArtistPage(artist);
+                    }
+                });
+            });
+            
+            // View artist button listeners
+            document.querySelectorAll('.view-artist-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const artist = btn.dataset.artist;
+                    showArtistPage(artist);
+                });
+            });
+            
+            // View all artists button
+            document.querySelector('.view-all-artists').addEventListener('click', () => {
+                showSection('artists');
+            });
+            
+            // Play all buttons for each artist
+            document.querySelectorAll('[id^="play-all-"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const artist = btn.id.replace('play-all-', '');
+                    playArtistFirstSong(artist);
+                });
+            });
+            
+            // Search functionality
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                // Search for artists
+                const artists = ['patoranking', 'adekunlegold', 'ayrastarr', 'davido', 'fireboydml', 'joshuabaraka'];
+                const foundArtist = artists.find(artist => artist.includes(searchTerm) || 
+                    artist.replace('boydml', '').includes(searchTerm) || 
+                    artist.replace('gold', '').includes(searchTerm));
+                
+                if (foundArtist) {
+                    showArtistPage(foundArtist);
+                }
+            });
+            
+            // Like buttons event listeners
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const songId = btn.dataset.song;
+                    toggleFavorite(songId);
+                });
+            });
+            
+            // Player like button
+            playerLikeBtn.addEventListener('click', () => {
+                toggleFavorite(currentSong);
+            });
+            
+            // Song options menu buttons
+            document.querySelectorAll('.song-options-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const songId = btn.dataset.song;
+                    toggleOptionsMenu(songId);
+                });
+            });
+            
+            // Song options menu items
+            document.querySelectorAll('.song-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const songId = option.dataset.song;
+                    const action = option.dataset.action;
+                    
+                    if (action === 'download') {
+                        downloadSong(songId);
+                    } else if (action === 'info') {
+                        showSongInfo(songId);
+                    }
+                    
+                    // Close the menu
+                    hideAllOptionsMenus();
+                });
+            });
+            
+            // Close song info modal
+            document.querySelectorAll('.close-song-info').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    songInfoModal.classList.remove('active');
+                });
+            });
+            
+            // Song info modal play button
+            songInfoPlayBtn.addEventListener('click', () => {
+                const songId = songInfoPlayBtn.dataset.song;
+                playSong(songId);
+                songInfoModal.classList.remove('active');
+            });
+            
+            // Close modals when clicking outside
+            document.addEventListener('click', (e) => {
+                // Close song options menus
+                if (!e.target.closest('.song-options-btn') && !e.target.closest('.song-options-menu')) {
+                    hideAllOptionsMenus();
+                }
+                
+                // Close song info modal
+                if (e.target === songInfoModal) {
+                    songInfoModal.classList.remove('active');
+                }
+            });
+            
+            // Initialize all artist sections as hidden
+            document.querySelectorAll('section[id$="-section"]').forEach(section => {
+                if (!section.id.includes('home') && !section.id.includes('artists') && 
+                    !section.id.includes('favorites') && !section.id.includes('waves') && 
+                    !section.id.includes('moods')) {
+                    section.classList.add('hidden-section');
+                }
+            });
+        }
+        
+        // Toggle song options menu
+        function toggleOptionsMenu(songId) {
+            const menu = document.getElementById(`menu-${songId}`);
+            
+            // Hide all other menus
+            hideAllOptionsMenus();
+            
+            // Toggle current menu
+            if (menu === activeOptionsMenu) {
+                menu.classList.remove('active');
+                activeOptionsMenu = null;
+            } else {
+                menu.classList.add('active');
+                activeOptionsMenu = menu;
+            }
+        }
+        
+        // Hide all song options menus
+        function hideAllOptionsMenus() {
+            document.querySelectorAll('.song-options-menu').forEach(menu => {
+                menu.classList.remove('active');
+            });
+            activeOptionsMenu = null;
+        }
+        
+        // Show song info modal
+        function showSongInfo(songId) {
+            const song = songData[songId];
+            if (!song) return;
+            
+            // Update modal content
+            songInfoTitle.textContent = song.title;
+            songInfoArtist.textContent = song.artist;
+            songInfoDuration.textContent = song.duration;
+            songInfoYear.textContent = song.year;
+            songInfoGenre.textContent = song.genre;
+            songInfoBitrate.textContent = song.bitrate;
+            songInfoAlbum.textContent = song.album;
+            songInfoDescription.textContent = song.description;
+            
+            // Set song image
+            songInfoImg.src = song.artistImg;
+            songInfoImg.alt = `${song.title} - ${song.artist}`;
+            
+            // Update play button to play this song
+            songInfoPlayBtn.dataset.song = songId;
+            
+            // Show modal
+            songInfoModal.classList.add('active');
+        }
+        
+        // Download song (simulated)
+        function downloadSong(songId) {
+            const song = songData[songId];
+            if (!song) return;
+            
+            // Check authentication
+            if (!authState.isAuthenticated) {
+                showAuthModal('login');
+                showNotification('Please sign in to download songs', 'info');
+                return;
+            }
+            
+            // Simulate download (in real app, this would be an actual download)
+            showNotification(`Downloading "${song.title}" by ${song.artist}...`, 'info');
+            
+            // Simulate download process
+            setTimeout(() => {
+                showNotification(`"${song.title}" downloaded successfully!`, 'success');
+            }, 1500);
+        }
+        
+        // Show a specific section
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('section[id$="-section"]').forEach(section => {
+                section.classList.remove('active-section');
+                section.classList.add('hidden-section');
+            });
+            
+            // Show selected section
+            const targetSection = document.getElementById(`${sectionId}-section`);
+            if (targetSection) {
+                targetSection.classList.remove('hidden-section');
+                targetSection.classList.add('active-section');
+                currentSection = sectionId;
+                
+                // If favorites section, update the list
+                if (sectionId === 'favorites') {
+                    updateFavoritesList();
+                }
+            }
+        }
+        
+        // Show artist page
+        function showArtistPage(artistId) {
+            // Hide all sections
+            document.querySelectorAll('section[id$="-section"]').forEach(section => {
+                section.classList.remove('active-section');
+                section.classList.add('hidden-section');
+            });
+            
+            // Show artist section
+            const artistSection = document.getElementById(`${artistId}-section`);
+            if (artistSection) {
+                artistSection.classList.remove('hidden-section');
+                artistSection.classList.add('active-section');
+                currentSection = artistId;
+                
+                // Set current playlist to artist's songs
+                setCurrentPlaylist(artistId);
+            }
+        }
+        
+        // Set current playlist based on artist
+        function setCurrentPlaylist(artistId) {
+            switch(artistId) {
+                case 'patoranking':
+                    currentPlaylist = ['abule', 'babylon'];
+                    break;
+                case 'adekunlegold':
+                    currentPlaylist = ['sinner'];
+                    break;
+                case 'ayrastarr':
+                    currentPlaylist = ['beggiebeggie'];
+                    break;
+                case 'davido':
+                    currentPlaylist = ['kante'];
+                    break;
+                case 'fireboydml':
+                    currentPlaylist = ['playboy'];
+                    break;
+                case 'joshuabaraka':
+                    currentPlaylist = ['wrongplaces'];
+                    break;
+                default:
+                    currentPlaylist = ['abule', 'babylon', 'sinner', 'beggiebeggie', 'kante', 'playboy', 'wrongplaces'];
+            }
+            
+            // Set current song index if current song is in playlist
+            currentSongIndex = currentPlaylist.indexOf(currentSong);
+            if (currentSongIndex === -1) {
+                currentSongIndex = 0;
+            }
+        }
+        
+        // Play first song of an artist
+        function playArtistFirstSong(artistId) {
+            let firstSong = '';
+            switch(artistId) {
+                case 'patoranking': firstSong = 'abule'; break;
+                case 'adekunlegold': firstSong = 'sinner'; break;
+                case 'ayrastarr': firstSong = 'beggiebeggie'; break;
+                case 'davido': firstSong = 'kante'; break;
+                case 'fireboydml': firstSong = 'playboy'; break;
+                case 'joshuabaraka': firstSong = 'wrongplaces'; break;
+                default: firstSong = 'abule';
+            }
+            playSong(firstSong);
+        }
+        
+        // Toggle favorite status
+        function toggleFavorite(songId) {
+            // Check authentication
+            if (!authState.isAuthenticated) {
+                showAuthModal('login');
+                showNotification('Please sign in to add favorites', 'info');
+                return;
+            }
+            
+            const index = favorites.indexOf(songId);
+            
+            if (index === -1) {
+                // Add to favorites
+                favorites.push(songId);
+                // Show notification
+                showNotification(`Added "${songData[songId].title}" to favorites`, 'success');
+            } else {
+                // Remove from favorites
+                favorites.splice(index, 1);
+                // Show notification
+                showNotification(`Removed "${songData[songId].title}" from favorites`, 'info');
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('soundwave_favorites', JSON.stringify(favorites));
+            
+            // Update UI
+            updateFavoritesUI();
+            
+            // If we're in favorites section, update the list
+            if (currentSection === 'favorites') {
+                updateFavoritesList();
+            }
+        }
+        
+        // Update favorites UI (heart icons)
+        function updateFavoritesUI() {
+            // Update player like button
+            const isCurrentFavorited = favorites.includes(currentSong);
+            playerLikeBtn.innerHTML = isCurrentFavorited ? 
+                '<i class="fas fa-heart text-red-500"></i>' : 
+                '<i class="far fa-heart"></i>';
+            
+            // Update individual song like buttons
+            Object.keys(songData).forEach(songId => {
+                const likeIcon = document.getElementById(`like-${songId}`);
+                if (likeIcon) {
+                    if (favorites.includes(songId)) {
+                        likeIcon.className = 'fas fa-heart text-red-500';
+                        if (likeIcon.closest('.like-btn')) {
+                            likeIcon.closest('.like-btn').classList.add('liked');
+                        }
+                    } else {
+                        likeIcon.className = 'far fa-heart';
+                        if (likeIcon.closest('.like-btn')) {
+                            likeIcon.closest('.like-btn').classList.remove('liked');
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update favorites list in favorites section
+        function updateFavoritesList() {
+            if (favorites.length === 0) {
+                noFavorites.style.display = 'block';
+                favoritesList.innerHTML = '';
+                favoritesList.appendChild(noFavorites);
+            } else {
+                noFavorites.style.display = 'none';
+                
+                // Create favorites list
+                let favoritesHTML = '';
+                
+                favorites.forEach((songId, index) => {
+                    const song = songData[songId];
+                    if (song) {
+                        favoritesHTML += `
+                            <div class="favorite-item flex items-center justify-between p-4 rounded-lg bg-gray-900/30 cursor-pointer relative" data-song="${songId}">
+                                <div class="flex items-center space-x-4 flex-1">
+                                    <div class="w-12 h-12 rounded-lg overflow-hidden">
+                                        <img src="${song.artistImg}" alt="${song.artist}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.className='w-12 h-12 ${song.gradient} rounded-lg flex items-center justify-center'; this.parentElement.innerHTML='<i class=\"fas fa-music text-white\"></i>';">
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium truncate">${song.title}</h3>
+                                        <p class="text-sm text-gray-400 truncate">${song.artist}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <span class="text-sm text-gray-400 font-['JetBrains_Mono']">${song.duration}</span>
+                                    <button class="like-btn text-red-500 hover:text-red-400 p-2" data-song="${songId}">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-white p-2 play-song-btn" data-song="${songId}">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <div class="relative">
+                                        <button class="song-options-btn text-gray-400 hover:text-white p-2" data-song="${songId}">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <!-- Song Options Menu -->
+                                        <div class="song-options-menu" id="menu-fav-${songId}">
+                                            <button class="song-option download" data-song="${songId}" data-action="download">
+                                                <i class="fas fa-download"></i>
+                                                <span>Download</span>
+                                            </button>
+                                            <button class="song-option info" data-song="${songId}" data-action="info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Song Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                favoritesList.innerHTML = favoritesHTML;
+                
+                // Add event listeners to new elements
+                favoritesList.querySelectorAll('.favorite-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        if (!e.target.closest('button') && !e.target.closest('.song-options-menu')) {
+                            const songId = item.dataset.song;
+                            playSong(songId);
+                        }
+                    });
+                });
+                
+                favoritesList.querySelectorAll('.like-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const songId = btn.dataset.song;
+                        toggleFavorite(songId);
+                    });
+                });
+                
+                favoritesList.querySelectorAll('.play-song-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const songId = btn.dataset.song;
+                        playSong(songId);
+                    });
+                });
+                
+                favoritesList.querySelectorAll('.song-options-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const songId = btn.dataset.song;
+                        const menu = document.getElementById(`menu-fav-${songId}`);
+                        toggleOptionsMenu(`fav-${songId}`);
+                    });
+                });
+                
+                favoritesList.querySelectorAll('.song-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const songId = option.dataset.song;
+                        const action = option.dataset.action;
+                        
+                        if (action === 'download') {
+                            downloadSong(songId);
+                        } else if (action === 'info') {
+                            showSongInfo(songId);
+                        }
+                        
+                        // Close the menu
+                        hideAllOptionsMenus();
+                    });
+                });
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Remove existing notification
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Determine icon based on type
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+            
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = `notification fixed top-4 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-fadeIn`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-${icon} text-${type === 'success' ? 'green' : type === 'error' ? 'red' : 'blue'}-400"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('animate-fadeOut');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Play a specific song
+        function playSong(songId) {
+            // Check authentication
+            if (!checkAuthBeforePlay()) {
+                return;
+            }
+            
+            // Stop current song
+            if (isPlaying) {
+                audioPlayers[currentSong].pause();
+            }
+            
+            // Update current song
+            currentSong = songId;
+            
+            // Update current playlist based on context
+            if (currentPlaylist.length === 0 || !currentPlaylist.includes(songId)) {
+                // If song not in current playlist, create a new playlist with all songs
+                currentPlaylist = Object.keys(songData);
+            }
+            
+            currentSongIndex = currentPlaylist.indexOf(songId);
+            
+            // Play new song
+            audioPlayers[songId].currentTime = 0;
+            audioPlayers[songId].play();
+            isPlaying = true;
+            
+            updatePlayerUI();
+            updateVisualizer();
+        }
+        
+        // Update player UI
+        function updatePlayerUI() {
+            const data = songData[currentSong];
+            
+            // Update text
+            currentSongEl.textContent = data.title;
+            currentArtistEl.textContent = data.artist;
+            sidebarSongEl.textContent = data.title;
+            sidebarArtistEl.textContent = data.artist;
+            durationEl.textContent = data.duration;
+            
+            // Update album art with artist image
+            playerAlbumImg.src = data.artistImg;
+            playerAlbumImg.alt = `${data.title} - ${data.artist}`;
+            
+            // Update sidebar album art
+            sidebarAlbumImg.src = data.artistImg;
+            sidebarAlbumImg.alt = `${data.title} - ${data.artist}`;
+            
+            // Update play/pause button
+            if (isPlaying) {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                playPauseBtn.classList.add('playing');
+            } else {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                playPauseBtn.classList.remove('playing');
+            }
+            
+            // Update favorites UI
+            updateFavoritesUI();
+        }
+        
+        // Check authentication before playing
+        function checkAuthBeforePlay(action) {
+            if (!authState.isAuthenticated) {
+                showAuthModal('login');
+                showNotification('Please sign in to play music', 'info');
+                return false;
+            }
+            return true;
+        }
+        
+        // Format time (seconds to mm:ss)
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+        
+        // Update progress bar
+        function updateProgress() {
+            const audio = audioPlayers[currentSong];
+            if (audio.duration) {
+                const progress = (audio.currentTime / audio.duration) * 100;
+                progressFill.style.width = `${progress}%`;
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+            }
+        }
+        
+        // Set volume
+        function setVolume(value) {
+            Object.values(audioPlayers).forEach(audio => {
+                audio.volume = value;
+            });
+            
+            // Update volume icon
+            if (value === 0) {
+                volumeIcon.className = 'fas fa-volume-mute text-gray-400';
+            } else if (value < 0.5) {
+                volumeIcon.className = 'fas fa-volume-down text-gray-400';
+            } else {
+                volumeIcon.className = 'fas fa-volume-up text-gray-400';
+            }
+        }
+        
+        // Update visualizer animation
+        function updateVisualizer() {
+            const bars = visualizer.querySelectorAll('.visualizer-bar');
+            if (isPlaying) {
+                bars.forEach(bar => {
+                    bar.style.animationPlayState = 'running';
+                });
+            } else {
+                bars.forEach(bar => {
+                    bar.style.animationPlayState = 'paused';
+                });
+            }
+        }
+        
+        // Play next song in playlist
+        function playNextSong() {
+            if (currentPlaylist.length === 0) {
+                // If no playlist, use all songs
+                currentPlaylist = Object.keys(songData);
+            }
+            
+            if (currentPlaylist.length === 1) {
+                // If only one song in playlist, repeat it
+                playSong(currentPlaylist[0]);
+            } else {
+                // Move to next song, loop back to start if at end
+                currentSongIndex = (currentSongIndex + 1) % currentPlaylist.length;
+                playSong(currentPlaylist[currentSongIndex]);
+            }
+        }
+        
+        // Play previous song in playlist
+        function playPreviousSong() {
+            if (currentPlaylist.length === 0) {
+                // If no playlist, use all songs
+                currentPlaylist = Object.keys(songData);
+            }
+            
+            if (currentPlaylist.length === 1) {
+                // If only one song in playlist, restart it
+                audioPlayers[currentSong].currentTime = 0;
+                playSong(currentPlaylist[0]);
+            } else {
+                // Move to previous song, loop to end if at start
+                currentSongIndex = (currentSongIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+                playSong(currentPlaylist[currentSongIndex]);
+            }
+        }
+        
+        // Event Listeners
+        playPauseBtn.addEventListener('click', () => {
+            if (!checkAuthBeforePlay()) {
+                return;
+            }
+            
+            const audio = audioPlayers[currentSong];
+            
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+            } else {
+                audio.play();
+                isPlaying = true;
+            }
+            
+            updatePlayerUI();
+            updateVisualizer();
+        });
+        
+        prevBtn.addEventListener('click', () => {
+            if (!checkAuthBeforePlay()) {
+                return;
+            }
+            
+            playPreviousSong();
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (!checkAuthBeforePlay()) {
+                return;
+            }
+            
+            playNextSong();
+        });
+        
+        volumeSlider.addEventListener('input', (e) => {
+            setVolume(e.target.value / 100);
+        });
+        
+        progressBar.addEventListener('click', (e) => {
+            if (!checkAuthBeforePlay()) {
+                return;
+            }
+            
+            const rect = progressBar.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            const audio = audioPlayers[currentSong];
+            audio.currentTime = pos * audio.duration;
+        });
+        
+        // Audio event listeners
+        Object.values(audioPlayers).forEach(audio => {
+            audio.addEventListener('timeupdate', updateProgress);
+            audio.addEventListener('ended', () => {
+                // Auto-play next song in playlist
+                playNextSong();
+            });
+        });
+        
+        // Reactive background effect
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth) * 100;
+            const y = (e.clientY / window.innerHeight) * 100;
+            reactiveBg.style.setProperty('--mouse-x', `${x}%`);
+            reactiveBg.style.setProperty('--mouse-y', `${y}%`);
+        });
+        
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translateY(0); }
+                to { opacity: 0; transform: translateY(-10px); }
+            }
+            
+            .animate-fadeIn {
+                animation: fadeIn 0.3s ease forwards;
+            }
+            
+            .animate-fadeOut {
+                animation: fadeOut 0.3s ease forwards;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
